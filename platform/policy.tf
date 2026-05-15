@@ -78,23 +78,23 @@ resource "azurerm_management_group_policy_assignment" "allowed_locations" {
 
   parameters = jsonencode({
     listOfAllowedLocations = {
-      value = ["canadacentral", "global"]  # global needed for things like MGs, action groups
+      value = ["canadacentral", "global"] # global needed for things like MGs, action groups
     }
   })
 }
 
 # ─── Policy 3: denied SKUs ─────────────────────────────────────────────────
-# This is a custom policy because the built-in "Not allowed resource types"
-# is too coarse — we want to allow most VMs and App Service plans but block
-# the expensive ones.
+# Custom policy: prevent expensive VM and App Service SKUs from being deployed.
+# Resource type is `azurerm_policy_definition` with `management_group_id` set —
+# NOT a separate "azurerm_management_group_policy_definition" resource type.
 
-resource "azurerm_management_group_policy_definition" "deny_expensive_skus" {
-  management_group_id = azurerm_management_group.root.id
+resource "azurerm_policy_definition" "deny_expensive_skus" {
   name                = "deny-expensive-skus"
-  display_name        = "Deny expensive VM and App Service SKUs"
-  description         = "Prevent accidental deployment of expensive SKUs that would burn the $200 credit"
   policy_type         = "Custom"
   mode                = "Indexed"
+  display_name        = "Deny expensive VM and App Service SKUs"
+  description         = "Prevent accidental deployment of expensive SKUs that would burn the $200 credit"
+  management_group_id = azurerm_management_group.root.id
 
   policy_rule = jsonencode({
     if = {
@@ -133,5 +133,5 @@ resource "azurerm_management_group_policy_assignment" "deny_expensive_skus" {
   name                 = "deny-expensive-skus"
   display_name         = "Deny expensive SKUs"
   management_group_id  = azurerm_management_group.root.id
-  policy_definition_id = azurerm_management_group_policy_definition.deny_expensive_skus.id
+  policy_definition_id = azurerm_policy_definition.deny_expensive_skus.id
 }
