@@ -1,0 +1,41 @@
+name: Platform IaC
+
+# Plans on every PR that touches platform/. Applies on push to main.
+# All real work happens in the reusable workflow at flagship-actions.
+
+on:
+  pull_request:
+    paths:
+      - 'platform/**'
+      - '.github/workflows/platform-iac.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'platform/**'
+      - '.github/workflows/platform-iac.yml'
+  workflow_dispatch:   # manual trigger from the Actions tab
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan:
+    name: Plan
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    uses: orealvic/flagship-actions/.github/workflows/terraform.yml@main
+    with:
+      working_directory: platform
+      state_key: platform.tfstate
+      apply: false
+
+  apply:
+    name: Apply
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: orealvic/flagship-actions/.github/workflows/terraform.yml@main
+    with:
+      working_directory: platform
+      state_key: platform.tfstate
+      environment: platform-apply   # GitHub Environment with required reviewers
+      apply: true
