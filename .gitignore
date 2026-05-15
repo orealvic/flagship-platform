@@ -1,0 +1,66 @@
+# ─── Terraform ─────────────────────────────────────────────────────────────
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfplan
+*.tfplan.*
+crash.log
+crash.*.log
+.terraform/
+.terraform.lock.hcl.bak
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Never commit real tfvars — only .example files
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+
+# ─── Secrets & credentials ─────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.cer
+*.priv
+id_rsa
+id_ed25519
+*.kubeconfig
+kubeconfig
+.azure/
+.aws/
+credentials
+client_secret*.json
+service-account*.json
+
+# ─── IDE / OS ──────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─── Build artifacts ───────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ─── Local-only files ──────────────────────────────────────────────────────
+.local/
+scratch/
+tmp/

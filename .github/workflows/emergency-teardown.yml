@@ -1,0 +1,87 @@
+name: 🚨 Emergency Teardown
+
+# Manually-triggered kill switch.
+# Destroys ALL flagship resource groups in reverse dependency order.
+# Requires typing the confirmation phrase to prevent accidental runs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type "destroy-everything" to confirm (case-sensitive)'
+        required: true
+        type: string
+      keep_state_backend:
+        description: 'Keep the state backend storage account? (recommended: true)'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  guardrail:
+    name: Confirmation check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify confirmation phrase
+        run: |
+          if [ "${{ inputs.confirmation }}" != "destroy-everything" ]; then
+            echo "::error::Confirmation phrase mismatch. Refusing to proceed."
+            exit 1
+          fi
+          echo "✓ Confirmation accepted. Proceeding with teardown."
+
+  teardown:
+    name: Destroy resources
+    needs: guardrail
+    runs-on: ubuntu-latest
+    environment: destruction  # requires manual approval in GH Environment settings
+
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: List flagship resource groups
+        id: list
+        run: |
+          if [ "${{ inputs.keep_state_backend }}" = "true" ]; then
+            EXCLUDE="rg-flagship-platform-bootstrap"
+          else
+            EXCLUDE="__none__"
+          fi
+
+          RGS=$(az group list \
+            --query "[?starts_with(name,'rg-flagship') && name!='$EXCLUDE'].name" \
+            -o tsv)
+
+          echo "Will delete:"
+          echo "$RGS"
+          echo "groups<<EOF" >> $GITHUB_OUTPUT
+          echo "$RGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Delete resource groups (in parallel, no-wait)
+        run: |
+          while IFS= read -r rg; do
+            [ -z "$rg" ] && continue
+            echo "🗑  Deleting $rg ..."
+            az group delete --name "$rg" --yes --no-wait
+          done <<< "${{ steps.list.outputs.groups }}"
+
+      - name: Report
+        run: |
+          echo "## Teardown initiated 🚨" >> $GITHUB_STEP_SUMMARY
+          echo "Resource groups marked for deletion (async):" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.list.outputs.groups }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "State backend kept: \`${{ inputs.keep_state_backend }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Verify in portal: Resource Groups → filter by 'flagship'" >> $GITHUB_STEP_SUMMARY

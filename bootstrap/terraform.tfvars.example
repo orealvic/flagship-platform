@@ -1,0 +1,6 @@
+# Copy this to terraform.tfvars (which is gitignored) and fill in your values.
+# DO NOT commit terraform.tfvars — only this .example file.
+
+subscription_id = "581d2bc0-046e-4a3b-b753-ed9977729366"
+location        = "canadacentral"
+alert_email     = "you@example.com"
