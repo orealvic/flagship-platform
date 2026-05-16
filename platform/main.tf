@@ -73,3 +73,5 @@ locals {
 }
 
 # Trigger fresh apply after CI/CD env fix
+
+# Trigger after YAML indent fix
