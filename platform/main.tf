@@ -71,3 +71,5 @@ locals {
   mg_prod         = "tg-flagship-prod"
   mg_dev          = "tg-flagship-dev"
 }
+
+# Trigger fresh apply after CI/CD env fix
